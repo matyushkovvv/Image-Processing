@@ -1,0 +1,6 @@
+﻿  coursework.cpp
+C:\development\C++\Image-Proccessing\ComputerVision\coursework\coursework.cpp(17,20): warning C4244: инициализация: преобразование "double" в "float", возможна потеря данных
+C:\development\C++\Image-Proccessing\ComputerVision\coursework\coursework.cpp(20,22): warning C4244: инициализация: преобразование "double" в "float", возможна потеря данных
+  coursework.vcxproj -> C:\development\C++\Image-Proccessing\ComputerVision\x64\Debug\coursework.exe
+  "pwsh.exe" не является внутренней или внешней
+  командой, исполняемой программой или пакетным файлом.
