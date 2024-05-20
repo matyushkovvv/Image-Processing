@@ -3,6 +3,9 @@
 #include <iostream>
 #include <cmath>
 
+#define TEST
+#undef TEST
+
 using namespace cv;
 using namespace std;
 
@@ -38,8 +41,46 @@ void createSpiral(const Mat& inputImage, Mat& outputImage, bool isColor, int spi
     }
 }
 
+
+
 int main(int argc) {
 
+
+#ifdef TEST
+
+    Mat inputImage1 = imread("woman.jpg", IMREAD_COLOR);
+    Mat inputImage2 = imread("woman.jpg", IMREAD_COLOR);
+    Mat inputImage3 = imread("woman.jpg", IMREAD_COLOR);
+    Mat inputImage4 = imread("woman.jpg", IMREAD_COLOR);
+
+    Mat grayImage1;
+    Mat grayImage2;
+    Mat grayImage3;
+    Mat grayImage4;
+
+    cvtColor(inputImage1, grayImage1, COLOR_BGR2GRAY);
+    cvtColor(inputImage2, grayImage2, COLOR_BGR2GRAY);
+    cvtColor(inputImage3, grayImage3, COLOR_BGR2GRAY);
+    cvtColor(inputImage4, grayImage4, COLOR_BGR2GRAY);
+
+    Mat outputImage1;
+    Mat outputImage2;
+    Mat outputImage3;
+    Mat outputImage4;
+
+    createSpiral(false ? inputImage1 : grayImage1, outputImage1, false, 1);
+    createSpiral(false ? inputImage2 : grayImage2, outputImage2, false, 3);
+    createSpiral(false ? inputImage3 : grayImage3, outputImage3, false, 5);
+    createSpiral(false ? inputImage4 : grayImage4, outputImage4, false, 10);
+
+    // Отображение и сохранение результата
+    imshow("Spiral Image1", outputImage1);
+    imshow("Spiral Image2", outputImage2);
+    imshow("Spiral Image3", outputImage3);
+    imshow("Spiral Image4", outputImage4);
+
+#else
+   
     string path;
     cout << "Input path to image: ";
     cin >> path;
@@ -79,7 +120,9 @@ int main(int argc) {
 
     // Отображение и сохранение результата
     imshow("Spiral Image", outputImage);
+    imshow("Original Image", inputImage);
     imwrite("spiral_image.jpg", outputImage);
+#endif
 
     waitKey(0);
     return 0;
