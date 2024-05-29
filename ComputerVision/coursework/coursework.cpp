@@ -3,23 +3,40 @@
 #include <iostream>
 #include <cmath>
 
-#define TEST
-#undef TEST
-
 using namespace cv;
 using namespace std;
 
-void createSpiral(const Mat& inputImage, Mat& outputImage, bool isColor, int spiralWidth) {
+double averageColor(const Mat& inputImage) {
+    Scalar sum = cv::sum(inputImage);
+    double totalSum = sum[0] + sum[1] + sum[2];
+    int totalPixels = inputImage.rows * inputImage.cols;
+    double average = totalSum / (totalPixels * 3);
+
+    return average;
+}
+
+Mat increaseBrightness(const Mat& inputImage, int brightnessValue) {
+
+    Mat brightenedImage;
+    inputImage.convertTo(brightenedImage, -1, 1, brightnessValue); // Увеличиваем яркость каждого пикселя
+
+    return brightenedImage;
+}
+
+void createSpiralImage(const Mat& inputImage, Mat& outlineImage, Mat& filledImage, int spiralWidth) {
     int width = inputImage.cols;
     int height = inputImage.rows;
     Point2f center(width / 2.0f, height / 2.0f);
 
-    outputImage = Mat::zeros(height, width, isColor ? CV_8UC3 : CV_8UC1);
+    outlineImage = Mat::ones(height, width, CV_8UC1) * 255;
+    filledImage = Mat::ones(height, width, CV_8UC1) * 255; 
 
-    float maxRadius = hypot(width / 2.0f, height / 2.0f);
-    float maxAngle = max(width, height) * CV_PI / spiralWidth;
+    float maxAngle = max(height, width) * 2 * CV_PI; // Устанавливаем число оборотов
 
-    for (float angle = 0; angle < maxAngle; angle += 0.001f) {
+    Point2f prevPoint1, prevPoint2;
+    bool hasPrevPoint = false;
+
+    for (float angle = 0; angle < maxAngle; angle += 0.01f) {
         float radius = spiralWidth * angle / (2 * CV_PI);
 
         float x = center.x + radius * cos(angle);
@@ -29,100 +46,87 @@ void createSpiral(const Mat& inputImage, Mat& outputImage, bool isColor, int spi
             int ix = static_cast<int>(x);
             int iy = static_cast<int>(y);
 
-            if (isColor) {
+            uchar intensity;
+            if (inputImage.channels() == 3) {
                 Vec3b color = inputImage.at<Vec3b>(iy, ix);
-                outputImage.at<Vec3b>(iy, ix) = color;
+                intensity = (color[0] + color[1] + color[2]) / 3; // Среднее значение для RGB изображения
             }
             else {
-                uchar color = inputImage.at<uchar>(iy, ix);
-                outputImage.at<uchar>(iy, ix) = color;
+                intensity = inputImage.at<uchar>(iy, ix); // Значение для градаций серого
             }
+
+            float thickness = 1 + ((255 - intensity) / 255.0f) * (spiralWidth - 1); // Толщина в зависимости от интенсивности
+
+            Point2f point1(
+                center.x + (radius - thickness / 2) * cos(angle),
+                center.y + (radius - thickness / 2) * sin(angle)
+            );
+            Point2f point2(
+                center.x + (radius + thickness / 2) * cos(angle),
+                center.y + (radius + thickness / 2) * sin(angle)
+            );
+
+            if (hasPrevPoint) {
+                line(outlineImage, prevPoint1, point1, Scalar(0, 0, 0), 1);
+                line(outlineImage, prevPoint2, point2, Scalar(0, 0, 0), 1);
+
+                // Заполнение области между линиями
+                for (float i = 0; i <= 1.0; i += 0.01f) {
+                    Point2f interPoint1 = prevPoint1 * (1.0f - i) + point1 * i;
+                    Point2f interPoint2 = prevPoint2 * (1.0f - i) + point2 * i;
+                    line(filledImage, interPoint1, interPoint2, Scalar(0, 0, 0), 1);
+                }
+            }
+
+            prevPoint1 = point1;
+            prevPoint2 = point2;
+            hasPrevPoint = true;
+        }
+        else {
+            hasPrevPoint = false; // Сбрасываем флаг, если точка выходит за границы изображения
         }
     }
 }
 
+int main(int argc, char* argv[]) {
 
-
-int main(int argc) {
-
-
-#ifdef TEST
-
-    Mat inputImage1 = imread("woman.jpg", IMREAD_COLOR);
-    Mat inputImage2 = imread("woman.jpg", IMREAD_COLOR);
-    Mat inputImage3 = imread("woman.jpg", IMREAD_COLOR);
-    Mat inputImage4 = imread("woman.jpg", IMREAD_COLOR);
-
-    Mat grayImage1;
-    Mat grayImage2;
-    Mat grayImage3;
-    Mat grayImage4;
-
-    cvtColor(inputImage1, grayImage1, COLOR_BGR2GRAY);
-    cvtColor(inputImage2, grayImage2, COLOR_BGR2GRAY);
-    cvtColor(inputImage3, grayImage3, COLOR_BGR2GRAY);
-    cvtColor(inputImage4, grayImage4, COLOR_BGR2GRAY);
-
-    Mat outputImage1;
-    Mat outputImage2;
-    Mat outputImage3;
-    Mat outputImage4;
-
-    createSpiral(false ? inputImage1 : grayImage1, outputImage1, false, 1);
-    createSpiral(false ? inputImage2 : grayImage2, outputImage2, false, 3);
-    createSpiral(false ? inputImage3 : grayImage3, outputImage3, false, 5);
-    createSpiral(false ? inputImage4 : grayImage4, outputImage4, false, 10);
-
-    // Отображение и сохранение результата
-    imshow("Spiral Image1", outputImage1);
-    imshow("Spiral Image2", outputImage2);
-    imshow("Spiral Image3", outputImage3);
-    imshow("Spiral Image4", outputImage4);
-
-#else
-   
-    string path;
-    cout << "Input path to image: ";
-    cin >> path;
-
-    // Проверка наличия входного изображения
-    if (path.empty()) {
-        cout << "Usage: ./kursovaya <image_path>" << endl;
+    if (argc != 3) {
+        cout << "Usage: ./coursework.exe <image_path> <spiral_width>" << endl;
         return -1;
     }
 
-    // Загрузка входного изображения
-    Mat inputImage = imread(path, IMREAD_COLOR);
+    string imagePath = argv[1];
+    int spiralWidth = atoi(argv[2]) >= 5 ? atoi(argv[2]) : 5;
+
+    Mat inputImage = imread(imagePath, IMREAD_COLOR);
     if (inputImage.empty()) {
         cout << "Could not open or find the image" << endl;
         return -1;
     }
 
-    // Запрос параметров у пользователя
-    char colorChoice;
-    cout << "Do you want a color (c) or black and white (b) spiral image? ";
-    cin >> colorChoice;
-    bool isColor = (colorChoice == 'c');
+    // Контрастирование
+    if (averageColor(inputImage) < 220) {
+        char answer;
+        cout << "The image is too dark, do you want to make it brighter? (y/n): ";
+        cin >> answer;
 
-    int spiralWidth;
-    cout << "Enter the spiral width (e.g., 5): ";
-    cin >> spiralWidth;
-
-    // Преобразование изображения в черно-белое, если это необходимо
-    Mat grayImage;
-    if (!isColor) {
-        cvtColor(inputImage, grayImage, COLOR_BGR2GRAY);
+        if (answer == 'y') {
+            inputImage = increaseBrightness(inputImage, 200 - averageColor(inputImage));
+        }
+        else {
+            inputImage = increaseBrightness(inputImage, 0);
+        }
     }
 
-    // Создание спирального изображения
-    Mat outputImage;
-    createSpiral(isColor ? inputImage : grayImage, outputImage, isColor, spiralWidth);
+    Mat outlineImage, filledImage;
+    createSpiralImage(inputImage, outlineImage, filledImage, spiralWidth);
 
-    // Отображение и сохранение результата
-    imshow("Spiral Image", outputImage);
-    imshow("Original Image", inputImage);
-    imwrite("spiral_image.jpg", outputImage);
-#endif
+    imshow("inputImage", inputImage);
+    imshow("Spiral Outline Image", outlineImage);
+    imshow("Spiral Filled Image", filledImage);
+    imwrite("input_image.jpg", inputImage);
+    imwrite("spiral_outline_image.jpg", outlineImage);
+    imwrite("spiral_filled_image.jpg", filledImage);
 
     waitKey(0);
     return 0;
