@@ -1,0 +1,9 @@
+﻿  imageGenerator.cpp
+C:\development\C++\Image-Proccessing\ComputerVision\lab_2\imageGenerator.cpp(20,34): warning C4101: e: неиспользованная локальная переменная
+C:\development\C++\Image-Proccessing\ComputerVision\lab_2\imageGenerator.cpp(41,34): warning C4101: e: неиспользованная локальная переменная
+C:\development\C++\Image-Proccessing\ComputerVision\lab_2\imageGenerator.cpp(73,34): warning C4101: e: неиспользованная локальная переменная
+  lab_2.cpp
+  Создание кода...
+  lab_2.vcxproj -> C:\development\C++\Image-Proccessing\ComputerVision\x64\Debug\lab_2.exe
+  "pwsh.exe" не является внутренней или внешней
+  командой, исполняемой программой или пакетным файлом.
