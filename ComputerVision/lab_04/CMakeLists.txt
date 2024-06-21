@@ -1,0 +1,2 @@
+add_executable(lab_04 lab_04.cpp)
+target_link_libraries(lab_04 PRIVATE opencv_core opencv_imgproc opencv_highgui)
